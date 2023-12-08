@@ -86,6 +86,7 @@ async function generateText(prompt) {
 async function handleTextCompletion(requestData, res) {
     // Extract the prompt from the request data
     const prompt = requestData.prompt;
+    console.log('Received prompt:', prompt);
 
     // Add a check for prompt to avoid TypeError
     const promptTokens = prompt ? prompt.split(' ').length : 0;
