@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Meta tags -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Page title -->
+  <title>OpenAI API Test</title>
+  <!-- jQuery library -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <!-- Styles -->
+  <style>
+    /* CSS styles for your page */
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    tr {
+      cursor: pointer;
+    }
+
+    #baseUrlInput {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    #loading {
+      display: none;
+      text-align: center;
+      margin-top: 10px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      background-color: #f5f5f5;
+      padding: 10px;
+    }
+
+    #sharedResult {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f5f5f5;
+      word-wrap: break-word;
+    }
+
+    #endpointCells {
+      display: flex;
+    }
+
+    .endpointCell {
+      flex: 1;
+      padding-right: 10px;
+      width: 30%;
+      max-width: 30%;
+      overflow-x: auto;
+    }
+
+    #requestPayload {
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f5f5f5;
+      padding: 10px;
+      white-space: pre-wrap;
+    }
+
+    /* Green button style */
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 4px 2px;
+      cursor: pointer;
+    }
+
+    #resultContent {
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f5f5f5;
+  padding: 10px;
+  white-space: pre-wrap;
+  overflow: auto; /* Use 'auto' to enable scrollbars when needed */
+}
+
+  </style>
+</head>
+<body>
+
+  <!-- Page title -->
+  <h1>OpenAI API Test</h1>
+
+  <!-- Input for the base URL -->
+  <label for="baseUrlInput">Base URL:</label>
+  <input type="text" id="baseUrlInput" placeholder="Enter base URL" value="https://myownhostedllm.com">
+
+  <!-- Table to display endpoints and results -->
+  <table id="resultTable">
+    <thead>
+      <tr>
+        <th colspan="3">Endpoints</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rows for each endpoint -->
+      <tr>
+        <td class="endpointCell" id="endpoint1" data-endpoint="/v1/completions">
+          <strong>/v1/completions</strong><br>
+        </td>
+        <td class="endpointCell" id="endpoint2" data-endpoint="/v1/chat/completions">
+          <strong>/v1/chat/completions</strong><br>
+        </td>
+        <td class="endpointCell" id="endpoint3" data-endpoint="/chat/completions">
+          <strong>/chat/completions</strong><br>
+        </td>
+      </tr>
+      <!-- Row for loading indicator -->
+      <tr>
+        <td colspan="3" id="loading"></td>
+      </tr>
+      <!-- Row for shared result -->
+      <tr>
+        <td colspan="3" id="sharedResult">
+          <!-- Div for request payload -->
+          <div id="requestPayload" contenteditable="true"></div>
+          <hr>
+          <!-- Pre tag for result content -->
+          <pre id="resultContent"></pre>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- JavaScript section -->
+  <script>
+    // jQuery elements
+    const loadingElement = $('#loading');
+    const requestPayloadElement = $('#requestPayload');
+    const resultContentElement = $('#resultContent');
+
+    // Default payloads for each endpoint
+    const defaultPayloads = {
+      '/v1/completions': {
+        model: 'gpt-3.5-turbo',
+        prompt: 'Say this is a test',
+        max_tokens: 7,
+        temperature: 0,
+      },
+      '/v1/chat/completions': {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'user', content: 'Say this is a test!' },
+          { role: 'assistant', content: 'Sure, this is a test.' },
+        ],
+      },
+      '/chat/completions': {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'user', content: 'Say this is a test!' },
+          { role: 'assistant', content: 'Sure, this is a test.' },
+        ],
+      },
+    };
+
+    // Initialize default payload for the first endpoint
+    const defaultEndpoint = '/v1/completions';
+    requestPayloadElement.text(JSON.stringify(defaultPayloads[defaultEndpoint], null, 2));
+
+    // Function to test API for a specific endpoint
+    function testApi(endpoint) {
+      const baseUrl = $('#baseUrlInput').val();
+      const payloadText = requestPayloadElement.text().trim();
+
+      if (!payloadText) {
+        alert('Please enter a valid JSON payload.');
+        return;
+      }
+
+      try {
+        const payload = JSON.parse(payloadText);
+
+        showLoading();
+
+        // AJAX request to the API
+        $.ajax({
+          type: 'POST',
+          url: baseUrl + (endpoint || ''),
+          contentType: 'application/json',
+          data: JSON.stringify(payload),
+          success: function (data) {
+            updateSharedResult(data);
+          },
+          error: function (xhr, status, error) {
+            console.error('Error:', xhr.status, xhr.statusText);
+          },
+          complete: hideLoading
+        });
+      } catch (e) {
+        alert('Invalid JSON payload. Please check your input.');
+      }
+    }
+
+    // Function to update the shared result content
+    function updateSharedResult(data) {
+      resultContentElement.text(JSON.stringify(data, null, 2));
+    }
+
+    // Function to show loading indicator
+    function showLoading() {
+      loadingElement.html('Loading...');
+      loadingElement.show();
+    }
+
+    // Function to hide loading indicator
+    function hideLoading() {
+      loadingElement.hide();
+    }
+
+    // Set default payload when selecting an endpoint
+    $('.endpointCell').click(function () {
+      const endpoint = $(this).attr('data-endpoint');
+      requestPayloadElement.text(JSON.stringify(defaultPayloads[endpoint], null, 2));
+    });
+
+    // Add test buttons next to each endpoint
+    $('.endpointCell').each(function () {
+      const endpoint = $(this).attr('data-endpoint');
+      const button = $('<button>Test Endpoint</button>');
+      button.click(function () {
+        testApi(endpoint);
+      });
+      $(this).append(button);
+    });
+  </script>
+
+</body>
+</html>
