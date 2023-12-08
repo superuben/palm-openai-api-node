@@ -3,8 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
-const fetchModule = import('node-fetch');
-const fetch = fetchModule.default || fetchModule;
+const axios = require('axios');
 
 // Create an Express application
 const app = express();
@@ -40,7 +39,7 @@ app.listen(port, () => {
 
 async function generateText(prompt) {
     // API key for accessing the language model API
-    const mykey = 'AI.....................................';
+    const mykey = 'AI...';
     // API endpoint for text generation
     const apiUrl = 'https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=' + mykey;
 
@@ -57,22 +56,17 @@ async function generateText(prompt) {
     };
 
     try {
-        // Make a POST request to the language model API
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(data),
-        });
+        // Make a POST request to the language model API using axios
+        const response = await axios.post(apiUrl, data, { headers });
 
         // Check if the API request was successful
-        if (!response.ok) {
-            const errorText = await response.text(); // Get the error response text
-            console.error(`Failed to generate text. Status: ${response.status}. Error: ${errorText}`);
+        if (!response.data || response.data.error) {
+            console.error(`Failed to generate text. Status: ${response.status}. Error: ${response.data.error?.message || 'Unknown error'}`);
             throw new Error('Failed to generate text');
         }
 
         // Parse the JSON response from the API
-        const result = await response.json();
+        const result = response.data;
 
         // Check if candidates array is defined and not empty
         if (result.candidates && result.candidates.length > 0) {
@@ -87,8 +81,6 @@ async function generateText(prompt) {
         return '...';
     }
 }
-
-
 
 // Function to handle text completion requests
 async function handleTextCompletion(requestData, res) {
