@@ -1,5 +1,5 @@
 # palm-openai-api-node
-Create a basic Openai like endpoint using the Google Palm 2 Bison api
+Create a basic Openai like endpoint using the Google Palm 2 Bison api and Node JS
 
 get your Google api key here: https://developers.generativeai.google/tutorials/setup
 
