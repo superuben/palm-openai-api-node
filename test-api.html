@@ -41,7 +41,8 @@
       cursor: pointer;
     }
 
-    #baseUrlInput {
+    #baseUrlInput,
+    #apiKeyInput { /* Added API key input style */
       width: 100%;
       margin-bottom: 10px;
     }
@@ -101,14 +102,14 @@
     }
 
     #resultContent {
-  margin-top: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f5f5f5;
-  padding: 10px;
-  white-space: pre-wrap;
-  overflow: auto; /* Use 'auto' to enable scrollbars when needed */
-}
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f5f5f5;
+      padding: 10px;
+      white-space: pre-wrap;
+      overflow: auto; /* Use 'auto' to enable scrollbars when needed */
+    }
 
   </style>
 </head>
@@ -120,6 +121,10 @@
   <!-- Input for the base URL -->
   <label for="baseUrlInput">Base URL:</label>
   <input type="text" id="baseUrlInput" placeholder="Enter base URL" value="https://myownhostedllm.com">
+
+  <!-- Input for the API Key -->
+  <label for="apiKeyInput">API Key:</label>
+  <input type="text" id="apiKeyInput" placeholder="Enter API Key">
 
   <!-- Table to display endpoints and results -->
   <table id="resultTable">
@@ -164,13 +169,14 @@
     const loadingElement = $('#loading');
     const requestPayloadElement = $('#requestPayload');
     const resultContentElement = $('#resultContent');
+    const apiKeyInput = $('#apiKeyInput'); // Added API Key input
 
     // Default payloads for each endpoint
     const defaultPayloads = {
       '/v1/completions': {
         model: 'gpt-3.5-turbo',
         prompt: 'Say this is a test',
-        max_tokens: 7,
+        max_tokens: 2000,
         temperature: 0,
       },
       '/v1/chat/completions': {
@@ -197,6 +203,7 @@
     function testApi(endpoint) {
       const baseUrl = $('#baseUrlInput').val();
       const payloadText = requestPayloadElement.text().trim();
+      const apiKey = apiKeyInput.val().trim(); // Get API Key
 
       if (!payloadText) {
         alert('Please enter a valid JSON payload.');
@@ -208,12 +215,15 @@
 
         showLoading();
 
-        // AJAX request to the API
+        // AJAX request to the API with API Key in the headers
         $.ajax({
           type: 'POST',
           url: baseUrl + (endpoint || ''),
           contentType: 'application/json',
           data: JSON.stringify(payload),
+          headers: {
+            'Authorization': `Bearer ${apiKey}`, // Add API Key to headers
+          },
           success: function (data) {
             updateSharedResult(data);
           },
