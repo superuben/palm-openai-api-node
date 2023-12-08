@@ -3,7 +3,7 @@ Create a basic Openai like endpoint using the Google Palm 2 Bison api and Node J
 
 get your Google api key here: https://developers.generativeai.google/tutorials/setup
 
-npm install express cors body-parser uuid node-fetch
+npm install express cors body-parser uuid axios
 
 change the key, then start the api with "node palm-openai-api-node.js"
 
